@@ -5,7 +5,7 @@ using namespace std;
 string toStringNum(int num) {
 	string res;
 	while(num) {
-		res += to_string((unsigned char)(num%10 + '0'));
+		res.push_back((unsigned char)(num%10 + '0'));
 		num/=10;
 	}
 	reverse(res.begin(), res.end());
@@ -39,8 +39,11 @@ int main() {
 			temp = "0" + temp;
 		numplaintext+=temp;
 	}
-	char numptchar[10000] = numplaintext.c_str();
+	char* numptchar = (char*)numplaintext.c_str();
+	cout<<"numptchar "<<numptchar<<endl;
 	mpz_set_str(M, numptchar, 10);
 	mpz_powm(C, M, e, n);
 	gmp_printf("%Zd\n", C); 
+	mpz_powm(M, C, d, n);
+	gmp_printf("%Zd\n", M);
 }
