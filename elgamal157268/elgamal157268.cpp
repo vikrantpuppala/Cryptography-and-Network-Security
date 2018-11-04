@@ -17,7 +17,7 @@ int main() {
     cout<<"Enter the plaintext (numerical): ";
     cin>>M;
 
-    gmp_randinit_mt(randstate);
+    gmp_randseed_ui(randstate, time(NULL));
     mpz_urandomm(k, randstate, pdecr);
 
     mpz_powm(r, alpha, k, p);
