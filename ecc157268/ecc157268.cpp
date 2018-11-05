@@ -2,82 +2,78 @@
 #include<gmp.h>
 using namespace std;
 
-struct point {
-    mpz_t first;
-    mpz_t second;
-};
-
-bool equalPoints(point a, point b) {
-    if(a.first == b.first && a.second == b.second)
-        return true;
-    return false;
-}
-
-point addPoints(point p, point q, mpz_t a, mpz_t prime) {
-    point r;
-    mpz_t lambda, temp;
-    mpz_inits(lambda, temp, r.first, r.second, NULL);
-    if(equalPoints(p, q)) {
-        mpz_mul(lambda, p.first, p.first);
-        mpz_mul_ui(lambda, p.first, 3);
+void addPoints(mpz_t px, mpz_t py, mpz_t qx, mpz_t qy, mpz_t a, mpz_t prime) {
+    mpz_t rx, ry, lambda, temp;
+    mpz_inits(lambda, temp, rx, ry, NULL);
+    if(!(mpz_cmp(px, qx) || mpz_cmp(py, qy))) {
+        mpz_mul(lambda, px, px);
+        mpz_mul_ui(lambda, lambda, 3);
         mpz_add(lambda, lambda, a);
-        mpz_mul_ui(temp, p.second, 2);
+        // gmp_printf("num = %Zd\n", lambda);
+        mpz_mul_ui(temp, py, 2);
+        // gmp_printf("den = %Zd\n", temp);
         mpz_invert(temp, temp, prime);
+        // gmp_printf("deninv = %Zd\n", temp);
         mpz_mul(lambda, lambda, temp);
+        // gmp_printf("mul = %Zd\n", lambda);
         mpz_mod(lambda, lambda, prime);
+        // gmp_printf("mulmod = %Zd\n", lambda);
     }
     else {
-        mpz_sub(temp, q.first, p.first);
+        mpz_sub(temp, qx, px);
         mpz_invert(temp, temp, prime);
-        mpz_sub(lambda, q.second, p.second);
+        mpz_sub(lambda, qy, py);
         mpz_mul(lambda, lambda, temp);
         mpz_mod(lambda, lambda, prime);
     }
 
-    mpz_mul(r.first, lambda, lambda);
-    mpz_sub(r.first, r.first, p.first);
-    mpz_sub(r.first, r.first, q.first);
-    mpz_mod(r.first, r.first, prime);
+    // gmp_printf("lambda = %Zd\n", lambda);
 
-    mpz_sub(r.second, p.first, r.first);
-    mpz_mul(r.second, r.second, lambda);
-    mpz_sub(r.second, r.second, p.second);
-    mpz_mod(r.second, r.second, prime);
+    mpz_mul(rx, lambda, lambda);
+    mpz_sub(rx, rx, px);
+    mpz_sub(rx, rx, qx);
+    mpz_mod(rx, rx, prime);
 
-    return r;
+    mpz_sub(ry, px, rx);
+    mpz_mul(ry, ry, lambda);
+    mpz_sub(ry, ry, py);
+    mpz_mod(ry, ry, prime);
+
+    mpz_set(px, rx);
+    mpz_set(py, ry);
 }
 
-void findN(mpz_t n, point g, point minusg, mpz_t a, mpz_t prime) {
-    point result;
-    mpz_inits(result.first, result.second, NULL);
+void findN(mpz_t n, mpz_t gx, mpz_t gy, mpz_t minusgx, mpz_t minusgy, mpz_t a, mpz_t prime) {
+    mpz_t resultx, resulty;
+    mpz_inits(resultx, resulty, NULL);
     mpz_set_ui(n, 1);
-    mpz_set(result.first, g.first);
-    mpz_set(result.second, g.second);
+    mpz_set(resultx, gx);
+    mpz_set(resulty, gy);
+        // gmp_printf("n = %Zd\tresult = %Zd, %Zd\n", n, resultx, resulty);
     while(true) {
-        result = addPoints(result, g, a, prime);
+        addPoints(resultx, resulty, gx, gy, a, prime);
         mpz_add_ui(n, n, 1);
-        if(equalPoints(result, minusg))
+        // gmp_printf("n = %Zd\tresult = %Zd, %Zd\n", n, resultx, resulty);
+        if(!(mpz_cmp(resultx, minusgx) || mpz_cmp(resulty, minusgy)))
             break;
     }
 }
 
-point multiplyPoint(mpz_t n, point p, mpz_t a, mpz_t prime) {
-    point result;
-    mpz_inits(result.first, result.second, NULL);
-    mpz_set(result.first, p.first);
-    mpz_set(result.second, p.second);
+void multiplyPoint(mpz_t resultx, mpz_t resulty, mpz_t n, mpz_t px, mpz_t py, mpz_t a, mpz_t prime) {
+    mpz_inits(resultx, resulty, NULL);
+    mpz_set(resultx, px);
+    mpz_set(resulty, py);
     mpz_sub_ui(n, n, 2);
-    while(mpz_sgn(n)) {
-        result = addPoints(result, p, a, prime);
+    while(mpz_sgn(n)>0) {
+        gmp_printf("n = %Zd\tresult = %Zd, %Zd\n", n, resultx, resulty);
+        addPoints(resultx, resulty, px, py, a, prime);
         mpz_sub_ui(n, n, 1);
     }
-    return result;
 }
 
 int main() {
-    mpz_t a, b, p, n, na, nb;
-    point g, minusg, pa, pb, ka, kb;
-    mpz_inits(a, b, p, n, na, nb, g.first, g.second, minusg.first, minusg.second, pa.first, pa.second, pb.first, pb.second, ka.first, ka.second, kb.first, kb.second, NULL);
+    mpz_t a, b, p, n, na, nb, gx, gy, minusgx, minusgy, pax, pay, pbx, pby, kax, kay, kbx, kby;
+    mpz_inits(a, b, p, n, na, nb, gx, gy, minusgx, minusgy, pax, pay, pbx, pby, kax, kay, kbx, kby, NULL);
     cout<<"Enter a prime number (or a number of the form 2^m) p: ";
     cin>>p;
     cout<<"Enter curve parameter a: ";
@@ -85,26 +81,31 @@ int main() {
     cout<<"Enter curve parameter b: ";
     cin>>b;
     cout<<"Enter a point on the curve, G (x, y): ";
-    cin>>g.first>>g.second;
+    cin>>gx>>gy;
 
-    mpz_set(minusg.first, g.first);
-    mpz_neg(minusg.second, minusg.second);
-    mpz_mod(minusg.second, minusg.second, p);
+    gmp_printf("gx = %Zd\tgy = %Zd\t%d\n", gx, gy, (unsigned int)1);
+    mpz_set(minusgx, gx);
+    mpz_neg(minusgy, gy);
+    mpz_mod(minusgy, minusgy, p);
 
-    findN(n, g, minusg, a, p);
+    gmp_printf("minusgx = %Zd\tminusgy = %Zd\n", minusgx, minusgy);
+    findN(n, gx, gy, minusgx, minusgy, a, p);
+
+    gmp_printf("n = %Zd\n", n);
 
     gmp_randstate_t randstate;
     gmp_randinit_mt(randstate);
-    gmp_randseed_ui(randstate, time(NULL));
     mpz_urandomm(na, randstate, n);
-    pa = multiplyPoint(na, g, a, p);
+    gmp_printf("na = %Zd\t", na);
+    multiplyPoint(pax, pay, na, gx, gy, a, p);
 
     gmp_randseed_ui(randstate, time(NULL));
     mpz_urandomm(nb, randstate, n);
-    pb = multiplyPoint(nb, g, a, p);
+    gmp_printf("nb = %Zd\n", nb);
+    multiplyPoint(pbx, pby, nb, gx, gy, a, p);
 
-    ka = multiplyPoint(na, pb, a, p);
-    kb = multiplyPoint(nb, pa, a, p);
+    multiplyPoint(kax, kay, na, pbx, pby, a, p);
+    multiplyPoint(kbx, kby, nb, pax, pay, a, p);
 
-    gmp_printf("n = %Zd\nna = %Zd\nnb = %Zd\nPa = (%Zd, %Zd)\nPb = (%Zd, %Zd)\nKa = (%Zd, %Zd)\nKb = (%Zd, %Zd)\n", n, na, nb, pa.first, pa.second, pb.first, pb.second, ka.first, ka.second, kb.first, kb.second);
+    gmp_printf("n = %Zd\nna = %Zd\nnb = %Zd\nPa = (%Zd, %Zd)\nPb = (%Zd, %Zd)\nKa = (%Zd, %Zd)\nKb = (%Zd, %Zd)\n", n, na, nb, pax, pay, pbx, pby, kax, kay, kbx, kby);
 }
