@@ -60,14 +60,15 @@ void findN(mpz_t n, mpz_t gx, mpz_t gy, mpz_t minusgx, mpz_t minusgy, mpz_t a, m
 }
 
 void multiplyPoint(mpz_t resultx, mpz_t resulty, mpz_t n, mpz_t px, mpz_t py, mpz_t a, mpz_t prime) {
-    mpz_inits(resultx, resulty, NULL);
+    mpz_t loop;
+    mpz_inits(loop, resultx, resulty, NULL);
     mpz_set(resultx, px);
     mpz_set(resulty, py);
-    mpz_sub_ui(n, n, 2);
-    while(mpz_sgn(n)>0) {
-        gmp_printf("n = %Zd\tresult = %Zd, %Zd\n", n, resultx, resulty);
+    mpz_sub_ui(loop, n, 1);
+    while(mpz_sgn(loop)>0) {
+        // gmp_printf("n = %Zd\tresult = %Zd, %Zd\n", loop, resultx, resulty);
         addPoints(resultx, resulty, px, py, a, prime);
-        mpz_sub_ui(n, n, 1);
+        mpz_sub_ui(loop, loop, 1);
     }
 }
 
@@ -83,12 +84,11 @@ int main() {
     cout<<"Enter a point on the curve, G (x, y): ";
     cin>>gx>>gy;
 
-    gmp_printf("gx = %Zd\tgy = %Zd\t%d\n", gx, gy, (unsigned int)1);
     mpz_set(minusgx, gx);
     mpz_neg(minusgy, gy);
     mpz_mod(minusgy, minusgy, p);
 
-    gmp_printf("minusgx = %Zd\tminusgy = %Zd\n", minusgx, minusgy);
+    gmp_printf("-g = (%Zd, %Zd)\n", minusgx, minusgy);
     findN(n, gx, gy, minusgx, minusgy, a, p);
 
     gmp_printf("n = %Zd\n", n);
@@ -96,16 +96,21 @@ int main() {
     gmp_randstate_t randstate;
     gmp_randinit_mt(randstate);
     mpz_urandomm(na, randstate, n);
-    gmp_printf("na = %Zd\t", na);
+    gmp_printf("na = %Zd\n", na);
+    mpz_set_ui(na, 121);
     multiplyPoint(pax, pay, na, gx, gy, a, p);
 
-    gmp_randseed_ui(randstate, time(NULL));
-    mpz_urandomm(nb, randstate, n);
+    do{
+        gmp_randseed_ui(randstate, time(NULL));
+        mpz_urandomm(nb, randstate, n);
+    } while(!mpz_cmp(na, nb));
+    mpz_set_ui(nb, 203);
     gmp_printf("nb = %Zd\n", nb);
     multiplyPoint(pbx, pby, nb, gx, gy, a, p);
 
     multiplyPoint(kax, kay, na, pbx, pby, a, p);
     multiplyPoint(kbx, kby, nb, pax, pay, a, p);
 
-    gmp_printf("n = %Zd\nna = %Zd\nnb = %Zd\nPa = (%Zd, %Zd)\nPb = (%Zd, %Zd)\nKa = (%Zd, %Zd)\nKb = (%Zd, %Zd)\n", n, na, nb, pax, pay, pbx, pby, kax, kay, kbx, kby);
+    gmp_printf("Pa = %Zd(%Zd, %Zd) = (%Zd, %Zd)\nPb = %Zd(%Zd, %Zd) = (%Zd, %Zd)\n", na, gx, gy, pax, pay, nb, gx, gy, pbx, pby);
+    gmp_printf("Ka = %Zd(%Zd, %Zd) = (%Zd, %Zd)\nKb = %Zd(%Zd, %Zd) = (%Zd, %Zd)\n", na, pbx, pby, kax, kay, nb, pax, pay, kbx, kby);
 }
