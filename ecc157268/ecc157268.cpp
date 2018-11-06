@@ -97,14 +97,12 @@ int main() {
     gmp_randinit_mt(randstate);
     mpz_urandomm(na, randstate, n);
     gmp_printf("na = %Zd\n", na);
-    mpz_set_ui(na, 121);
     multiplyPoint(pax, pay, na, gx, gy, a, p);
 
     do{
         gmp_randseed_ui(randstate, time(NULL));
         mpz_urandomm(nb, randstate, n);
     } while(!mpz_cmp(na, nb));
-    mpz_set_ui(nb, 203);
     gmp_printf("nb = %Zd\n", nb);
     multiplyPoint(pbx, pby, nb, gx, gy, a, p);
 
